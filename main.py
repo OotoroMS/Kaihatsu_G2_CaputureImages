@@ -2,6 +2,7 @@
 
 import cv2
 import serial
+from serial_communicator import SerialCommunicator
 import struct
 import time
 from datetime import datetime
