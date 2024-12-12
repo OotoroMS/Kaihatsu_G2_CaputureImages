@@ -1,5 +1,6 @@
 import cv2
 import serial
+import serial_communicator
 import struct
 import time
 from datetime import datetime
@@ -8,28 +9,17 @@ def log_time(start_time, description):
     elapsed_time = time.time() - start_time
     print(f"{description} completed in {elapsed_time:.2f} seconds.")
 
-def capture_image(camera_index, filename):
+def capture_image(cap, filename):
     start_time = time.time()
     print("Starting image capture...")
-
-    cap = cv2.VideoCapture(camera_index)
-    if not cap.isOpened():
-        print("Error: Unable to open camera.")
-        return False
-
-    # 解像度を明示的に設定
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2592)  # 幅を2592pxに設定
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1944) # 高さを1944pxに設定
 
     ret, frame = cap.read()
     if ret:
         cv2.imwrite(filename, frame)
     else:
         print("Error: Unable to capture image.")
-        cap.release()
         return False
 
-    cap.release()
     log_time(start_time, "Image capture")
     return True
 
@@ -42,7 +32,7 @@ def main():
         "timeout": 0.08,
     }
 
-    serial_comm = SerialCommunicator(**serial_params)
+    serial_comm = serial_communicator.SerialCommunicator(**serial_params)
 
     max_steps = 200 # 200ステップで一周
     steps_by_once = 10 # 一回での回転数
@@ -50,6 +40,14 @@ def main():
     try:
         # Initialize camera index
         camera_index = 0
+        cap = cv2.VideoCapture(camera_index)
+        if not cap.isOpened():
+            print("Error: Unable to open camera.")
+            return
+
+        # 解像度を明示的に設定
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2592)  # 幅を2592pxに設定
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1944) # 高さを1944pxに設定
 
         serial_comm.serial_write(struct.pack(">B", 10)) # ソレノイド動作
 
@@ -66,7 +64,7 @@ def main():
             # Capture image
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"./RawImages/{timestamp}.bmp"
-            if capture_image(camera_index, filename):
+            if capture_image(cap, filename):
                 print(f"Image saved: {filename}")
             else:
                 print("Failed to save image.")
@@ -82,6 +80,7 @@ def main():
         print(f"Error: {e}")
 
     finally:
+        cap.release()
         serial_comm.close()
 
 if __name__ == "__main__":
