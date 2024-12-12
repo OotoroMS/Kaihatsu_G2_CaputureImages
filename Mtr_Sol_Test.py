@@ -1,4 +1,3 @@
-import serial.test
 import pc_comands
 import plc_pc
 import serial_communicator
