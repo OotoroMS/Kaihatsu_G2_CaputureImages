@@ -1,12 +1,17 @@
-# 撮影、回転をして、学習用画像を保存するプログラム
-
 import cv2
 import serial
 import struct
 import time
 from datetime import datetime
 
+def log_time(start_time, description):
+    elapsed_time = time.time() - start_time
+    print(f"{description} completed in {elapsed_time:.2f} seconds.")
+
 def capture_image(camera_index, filename):
+    start_time = time.time()
+    print("Starting image capture...")
+
     cap = cv2.VideoCapture(camera_index)
     if not cap.isOpened():
         print("Error: Unable to open camera.")
@@ -25,6 +30,7 @@ def capture_image(camera_index, filename):
         return False
 
     cap.release()
+    log_time(start_time, "Image capture")
     return True
 
 def main():
@@ -51,8 +57,11 @@ def main():
             print(f"Step {step+1}/{max_steps // steps_by_once}")
 
             # Signal PLC to fix the workpiece
+            start_time = time.time()
+            print("Sending PLC signal to fix workpiece...")
             serial_comm.serial_write(struct.pack(">B", 210)) # ステッピングモーター回転数指示 (200+Step数)
             time.sleep(0.5)
+            log_time(start_time, "PLC workpiece fixing signal")
 
             # Capture image
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -62,7 +71,11 @@ def main():
             else:
                 print("Failed to save image.")
 
+        start_time = time.time()
+        print("Releasing solenoid...")
         serial_comm.serial_write(struct.pack(">B", 11)) # ソレノイド解放
+        log_time(start_time, "Solenoid release")
+
         print("Process completed.")
 
     except Exception as e:
