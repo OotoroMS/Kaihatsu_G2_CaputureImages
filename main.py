@@ -49,6 +49,8 @@ def main():
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2592)  # 幅を2592pxに設定
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1944) # 高さを1944pxに設定
 
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'YUYV'))  # 未圧縮形式に設定を試みる
+
         serial_comm.serial_write(struct.pack(">B", 10)) # ソレノイド動作
 
         for step in range(max_steps // steps_by_once):
